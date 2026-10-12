@@ -1,0 +1,8 @@
+:root { color-scheme: light dark; --accent: #2563eb; }
+body { font: 16px/1.6 system-ui, sans-serif; max-width: 40rem; margin: 0 auto; padding: 1rem; }
+nav { display: flex; gap: 1rem; margin-bottom: 2rem; }
+a { color: var(--accent); }
+input { font: inherit; padding: .4rem .6rem; margin: 0 .5rem; }
+button { font: inherit; padding: .4rem .9rem; }
+.flash { padding: .6rem .9rem; border-radius: .4rem; background: color-mix(in srgb, var(--accent) 15%, transparent); }
+.error { color: #dc2626; margin: .25rem 0; }

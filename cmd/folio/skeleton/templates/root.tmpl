@@ -1,0 +1,24 @@
+{{/* folio/title is also sent as the title on in-place navigation. */}}
+{{define "folio/title"}}{{with .Page.Title}}{{.}} · {{end}}{{.Page.AppName}}{{end}}
+
+{{define "layout/app"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{template "folio/title" .}}</title>
+  <link rel="stylesheet" href="{{asset "app.css"}}">
+  {{template "folio/head" .}}
+</head>
+<body>
+  <header>
+    <nav data-folio-link>
+      <a href="/">Home</a>
+      <a href="/about">About</a>
+    </nav>
+  </header>
+  <main id="content">{{.HTML}}</main>
+</body>
+</html>
+{{end}}

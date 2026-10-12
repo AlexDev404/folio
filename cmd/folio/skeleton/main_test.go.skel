@@ -1,0 +1,27 @@
+package main
+
+import (
+	"net/url"
+	"testing"
+
+	"github.com/AlexDev404/folio/foliotest"
+)
+
+func TestPages(t *testing.T) {
+	app, err := newApp(false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := foliotest.New(t, app.Handler())
+
+	c.Get("/").ExpectStatus(200).ExpectContains("What's your name?")
+	c.Get("/about").ExpectStatus(200)
+	c.Get("/nope").ExpectStatus(404)
+
+	c.PostForm("/", url.Values{"name": {""}}).ExpectStatus(422).ExpectContains("Tell us your name")
+	c.PostForm("/", url.Values{"name": {"Ada"}}).
+		ExpectRedirect("/hello/Ada").
+		Follow().
+		ExpectContains("Hello, Ada").
+		ExpectContains("Nice to meet you, Ada!")
+}

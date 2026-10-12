@@ -1,0 +1,82 @@
+package main
+
+import (
+	"embed"
+	"flag"
+	"io/fs"
+	"log/slog"
+	"net/http"
+	"net/url"
+	"os"
+
+	"github.com/AlexDev404/folio"
+	"github.com/AlexDev404/folio/validator"
+)
+
+//go:embed templates static
+var files embed.FS
+
+func main() {
+	addr := flag.String("addr", ":4000", "HTTP address")
+	dev := flag.Bool("dev", false, "reload templates and the browser on changes")
+	flag.Parse()
+
+	app, err := newApp(*dev)
+	if err != nil {
+		slog.Error("starting", "error", err)
+		os.Exit(1)
+	}
+	if err := app.ListenAndServe(*addr); err != nil {
+		slog.Error("server stopped", "error", err)
+		os.Exit(1)
+	}
+}
+
+func newApp(dev bool) (*folio.App, error) {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	// In dev mode read files from disk so edits show up immediately;
+	// otherwise serve the copies embedded in the binary.
+	var templates, static fs.FS = os.DirFS("templates"), os.DirFS("static")
+	if !dev {
+		templates, _ = fs.Sub(files, "templates")
+		static, _ = fs.Sub(files, "static")
+	}
+
+	app, err := folio.New(folio.Config{
+		Templates: templates,
+		Static:    static,
+		Reload:    dev,
+		Logger:    logger,
+		// Set SESSION_SECRET to 32+ random bytes in production so sessions
+		// survive restarts.
+		SecretKey: []byte(os.Getenv("SESSION_SECRET")),
+		Globals:   map[string]any{"AppName": "{{NAME}}"},
+	})
+	if err != nil {
+		return nil, err
+	}
+	app.Use(folio.RequestLogger(logger), folio.Recoverer(logger), folio.Compress())
+
+	app.Action("index", func(c *folio.Ctx) error {
+		name := c.Request.PostFormValue("name")
+		v := validator.NewValidator()
+		v.Check(validator.NotBlank(name), "name", "Tell us your name")
+		v.Check(validator.MaxLength(name, 40), "name", "That's a long name; 40 characters at most")
+		if !v.ValidData() {
+			c.Status(http.StatusUnprocessableEntity)
+			c.Fail("Please fix the errors below.", v.Errors)
+			c.Set("name", name)
+			return nil
+		}
+		c.Flash("Nice to meet you, " + name + "!")
+		c.Redirect("/hello/"+url.PathEscape(name), http.StatusSeeOther)
+		return nil
+	})
+
+	app.Load("hello/[name]", func(c *folio.Ctx) error {
+		c.Set("Title", "Hello, "+c.Param("name"))
+		return nil
+	})
+	return app, nil
+}

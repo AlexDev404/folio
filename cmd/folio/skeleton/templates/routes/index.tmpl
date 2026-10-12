@@ -1,0 +1,10 @@
+{{template "partial/flash" .}}
+<h1>What's your name?</h1>
+<form method="post" data-folio-form>
+  <label>
+    Name
+    <input name="name" value="{{.Page.name}}" autofocus>
+  </label>
+  {{with index .Page.Errors "name"}}<p class="error">{{.}}</p>{{end}}
+  <button>Say hello</button>
+</form>
