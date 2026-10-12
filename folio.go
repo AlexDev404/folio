@@ -102,8 +102,13 @@ type Config struct {
 	Logger *slog.Logger
 }
 
-// LoadFunc fills in page data for a route. Returning an error renders the 500 page.
+// LoadFunc fills in page data for a route. Returning ErrNotFound renders the
+// 404 page; any other error renders the 500 page.
 type LoadFunc func(c *Ctx) error
+
+// ErrNotFound tells folio to answer with the 404 page, e.g. when a [param]
+// doesn't match a record the visitor may see. Wrapped errors work too.
+var ErrNotFound = errors.New("folio: not found")
 
 // Middleware wraps an http.Handler.
 type Middleware func(http.Handler) http.Handler

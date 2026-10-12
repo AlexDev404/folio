@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
@@ -375,6 +376,19 @@ func TestErrors(t *testing.T) {
 	dev := newTestApp(t, func(c *Config) { c.Reload = true })
 	dev.Load("about", func(c *Ctx) error { return errors.New("db down") })
 	foliotest.New(t, dev.Handler()).Get("/about").ExpectStatus(500).ExpectContains("db down")
+}
+
+func TestNotFoundFromHook(t *testing.T) {
+	app := newTestApp(t)
+	app.Load("journal/[id]", func(c *Ctx) error {
+		if c.Param("id") != "1" {
+			return fmt.Errorf("entry %s: %w", c.Param("id"), ErrNotFound)
+		}
+		return nil
+	})
+	c := foliotest.New(t, app.Handler())
+	c.Get("/journal/1").ExpectStatus(200)
+	c.Get("/journal/2").ExpectStatus(404).ExpectContains("nope /journal/2")
 }
 
 func TestStrictTemplates(t *testing.T) {

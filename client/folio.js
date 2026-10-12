@@ -224,11 +224,19 @@
     return load(url, { history: replace ? "replace" : "push" });
   }
 
+  // The URL a form submits to. A button's formAction property falls back to
+  // the page URL (not the form's action) when it has no formaction attribute,
+  // so only use it when the attribute is there.
+  function actionOf(form, submitter) {
+    if (submitter && submitter.hasAttribute("formaction")) return submitter.formAction;
+    return form.action || location.href;
+  }
+
   // Submit a form in place. GET forms navigate; POST forms post and show the
   // response, following redirects.
   function submit(form, submitter) {
     const method = ((submitter && submitter.getAttribute("formmethod")) || form.getAttribute("method") || "GET").toUpperCase();
-    const action = (submitter && submitter.formAction) || form.action || location.href;
+    const action = actionOf(form, submitter);
     const data = new FormData(form, submitter || undefined);
     if (method === "GET") {
       const url = new URL(action, location.href);
@@ -263,7 +271,7 @@
   document.addEventListener("submit", (e) => {
     const form = e.target;
     if (e.defaultPrevented || !(form instanceof HTMLFormElement) || !optedIn(form) || form.target) return;
-    const action = (e.submitter && e.submitter.formAction) || form.action;
+    const action = actionOf(form, e.submitter);
     if (!sameOrigin(action)) return;
     e.preventDefault();
     submit(form, e.submitter);

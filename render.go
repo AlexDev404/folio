@@ -2,6 +2,7 @@ package folio
 
 import (
 	"bytes"
+	"errors"
 	"html/template"
 	"io/fs"
 	"maps"
@@ -160,6 +161,10 @@ func (a *App) runHook(c *Ctx, fn LoadFunc, s *site) bool {
 		if err != nil {
 			c.Logger.Error("hook failed after writing the response", "error", err)
 		}
+		return false
+	}
+	if errors.Is(err, ErrNotFound) {
+		a.errorPage(c.w, c.Request, s, http.StatusNotFound, nil)
 		return false
 	}
 	if err != nil {

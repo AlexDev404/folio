@@ -88,7 +88,7 @@ All three take a `func(c *folio.Ctx) error`:
 | `c.Header()` / `c.Writer()` | Raw response access. Writing through `Writer` takes over the response |
 | `c.Request`, `c.Route`, `c.Logger` | The request, the route name, and a logger tagged with the route |
 
-- **Errors.** A hook that returns an error renders the 500 page.
+- **Errors.** A hook that returns `folio.ErrNotFound` (or wraps it) renders the 404 page, e.g. when `/journal/[id]` names an entry that doesn't exist. Any other error renders the 500 page.
 - **Unregistered POSTs.** A POST to a route without an `Action` gets a 405.
 - **Typo warning.** Hooks registered for a route that has no template are logged as a warning at startup, so a typo like `Load("tool", ...)` is easy to spot.
 - **Other endpoints.** For APIs, health checks and the like, use `app.Handle(pattern, handler)` or `app.HandleFunc`. Patterns follow `http.ServeMux`, e.g. `"POST /api/moods"`.
